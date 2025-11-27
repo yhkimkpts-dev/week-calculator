@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 from streamlit_option_menu import option_menu
-import json # 1. JSON 모듈 추가
+import json 
 
 DATE_FMT = "%Y-%m-%d"
-DATA_FILE = "flocks_data.json" # 2. 데이터 파일명 정의
+DATA_FILE = "flocks_data.json" # 데이터 파일명 정의
 
 # ----------------- 1. 계산 로직 함수 -----------------
 
@@ -32,7 +32,7 @@ def format_date_with_weekday(d):
 
 # ----------------- 2. Streamlit UI 및 관리 로직 -----------------
 
-# [NEW] 데이터 저장 및 불러오기 함수
+# 데이터 저장 및 불러오기 함수
 def load_data():
     """데이터를 파일에서 불러옵니다. (앱 시작 시 호출)"""
     try:
@@ -47,13 +47,13 @@ def save_data(flocks_data):
         with open(DATA_FILE, "w", encoding="utf-8") as f:
             json.dump(flocks_data, f, ensure_ascii=False, indent=4)
     except Exception as e:
-        # Streamlit Cloud에서는 쓰기 권한이나 환경 문제로 실패할 수 있습니다.
+        # Streamlit Cloud에서는 쓰기 권한이나 환경 문제로 실패할 수 있음
         pass
 
 
-# 세션 상태 초기화 (Streamlit에서 데이터 저장 용도)
+# 세션 상태 초기화 및 데이터 불러오기
 if 'flocks' not in st.session_state:
-    st.session_state.flocks = load_data() # 3. 앱 시작 시 데이터 불러오기
+    st.session_state.flocks = load_data()
 
 
 # 계군 추가 콜백
@@ -64,25 +64,19 @@ def add_flock_callback(name, hatch_date):
     
     # datetime 객체를 문자열로 저장
     st.session_state.flocks[name] = hatch_date.strftime(DATE_FMT)
-    save_data(st.session_state.flocks) # 4. 추가 후 데이터 저장
+    save_data(st.session_state.flocks) # 추가 후 데이터 저장
     st.success(f"✅ 계군 '{name}' (입추일: {hatch_date.strftime(DATE_FMT)})이(가) 등록/업데이트되었습니다.")
 
-# 계군 삭제 콜백
-def delete_flock_callback(name_to_delete):
-    if name_to_delete in st.session_state.flocks:
-        del st.session_state.flocks[name_to_delete]
-        save_data(st.session_state.flocks) # 5. 삭제 후 데이터 저장
-        st.success(f"🗑️ 계군 '{name_to_delete}'이(가) 삭제되었습니다.")
 
 # --- 메인 앱 설정 ---
 st.set_page_config(
-    page_title="[회사 이름] 주령 계산기 (다계군)",
+    page_title="[회사 이름] 주령 계산기 (다계군)", # 필요에 따라 회사 이름을 넣어주세요
     layout="wide",
     initial_sidebar_state="expanded"
 )
 col1, col2 = st.columns([1, 5]) # 로고와 제목을 위한 컬럼 분할
 with col1:
-    # 이 부분은 사용자님이 설정한 파일명으로 그대로 두세요.
+    # 성공적으로 적용하신 로고 파일명으로 유지합니다.
     st.image("kpts.jpg", width=70) 
 with col2:
     st.title("한국양계 다계군 주령 계산기")
@@ -122,7 +116,7 @@ with st.sidebar:
             use_container_width=True
         )
 
-        # 폼: 계군 삭제
+        # 폼: 계군 삭제 (삭제 로직 강화)
         with st.form("flock_delete_form"):
             flock_to_delete = st.selectbox(
                 "삭제할 계군을 선택하세요.",
@@ -131,11 +125,19 @@ with st.sidebar:
                 key="flock_delete_select",
                 label_visibility="collapsed"
             )
+            
+            # 선택된 항목이 빈 문자열이 아닐 때만 버튼 활성화
             delete_submitted = st.form_submit_button("🗑️ 선택 계군 삭제", disabled=(flock_to_delete == ""))
 
-            if delete_submitted:
-                delete_flock_callback(flock_to_delete)
-                st.rerun() # 삭제 후 페이지 새로고침
+            # 핵심 수정: 로직을 이 블록 안에 직접 넣고 st.rerun() 호출
+            if delete_submitted and flock_to_delete != "":
+                if flock_to_delete in st.session_state.flocks:
+                    del st.session_state.flocks[flock_to_delete] # 세션 상태에서 직접 삭제
+                    save_data(st.session_state.flocks)           # 파일에 저장
+                    st.success(f"🗑️ 계군 '{flock_to_delete}'이(가) 삭제되었습니다.")
+                    st.rerun() # UI 새로고침
+                else:
+                    st.error("삭제하려는 계군이 목록에 없습니다.")
 
         st.info(f"총 {len(current_flocks)}개 계군이 등록되었습니다.")
     else:
