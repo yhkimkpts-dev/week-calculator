@@ -56,7 +56,13 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-st.title("🐔 한국양계 다계군 주령 계산기")
+col1, col2 = st.columns([1, 5]) # 로고와 제목을 위한 컬럼 분할
+with col1:
+    # 로고 이미지 삽입 (경로와 파일명을 본인것으로 수정해주세요)
+    st.image("kpts.jpg", width=70) # GitHub 루트에 올렸다면 "kpts.jpg"
+                                            # images 폴더에 넣었다면 "images/kpts.jpg"
+with col2:
+    st.title("한국양계 다계군 주령 계산기")
 
 today = datetime.now().date()
 current_flocks = st.session_state.flocks
