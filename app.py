@@ -70,13 +70,13 @@ def add_flock_callback(name, hatch_date):
 
 # --- 메인 앱 설정 ---
 st.set_page_config(
-    page_title="[회사 이름] 주령 계산기 (다계군)", # 필요에 따라 회사 이름을 넣어주세요
+    page_title="🐔 한국양계 주령 계산기 (다계군)", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 col1, col2 = st.columns([1, 5]) # 로고와 제목을 위한 컬럼 분할
 with col1:
-    # 성공적으로 적용하신 로고 파일명으로 유지합니다.
+    # 이 부분은 사용자님이 설정한 로고 파일명으로 유지합니다.
     st.image("kpts.jpg", width=70) 
 with col2:
     st.title("한국양계 다계군 주령 계산기")
@@ -116,7 +116,7 @@ with st.sidebar:
             use_container_width=True
         )
 
-        # 폼: 계군 삭제 (삭제 로직 강화)
+        # 폼: 계군 삭제 (삭제 로직 강화 및 버튼 활성화)
         with st.form("flock_delete_form"):
             flock_to_delete = st.selectbox(
                 "삭제할 계군을 선택하세요.",
@@ -126,18 +126,21 @@ with st.sidebar:
                 label_visibility="collapsed"
             )
             
-            # 선택된 항목이 빈 문자열이 아닐 때만 버튼 활성화
-            delete_submitted = st.form_submit_button("🗑️ 선택 계군 삭제", disabled=(flock_to_delete == ""))
+            # 💡 핵심 수정: disabled=False로 설정하여 버튼이 항상 활성화되도록 변경
+            delete_submitted = st.form_submit_button("🗑️ 선택 계군 삭제", disabled=False)
 
-            # 핵심 수정: 로직을 이 블록 안에 직접 넣고 st.rerun() 호출
-            if delete_submitted and flock_to_delete != "":
-                if flock_to_delete in st.session_state.flocks:
-                    del st.session_state.flocks[flock_to_delete] # 세션 상태에서 직접 삭제
-                    save_data(st.session_state.flocks)           # 파일에 저장
-                    st.success(f"🗑️ 계군 '{flock_to_delete}'이(가) 삭제되었습니다.")
-                    st.rerun() # UI 새로고침
+            if delete_submitted: 
+                if flock_to_delete != "": 
+                    if flock_to_delete in st.session_state.flocks:
+                        del st.session_state.flocks[flock_to_delete] # 세션 상태에서 직접 삭제
+                        save_data(st.session_state.flocks)           # 파일에 저장
+                        st.success(f"🗑️ 계군 '{flock_to_delete}'이(가) 삭제되었습니다.")
+                        st.rerun() # UI 새로고침
+                    else:
+                        st.error("삭제하려는 계군이 목록에 없습니다.")
                 else:
-                    st.error("삭제하려는 계군이 목록에 없습니다.")
+                    # 버튼이 눌렸으나 유효한 계군을 선택하지 않은 경우 피드백 제공
+                    st.error("삭제할 계군을 먼저 선택해 주세요.")
 
         st.info(f"총 {len(current_flocks)}개 계군이 등록되었습니다.")
     else:
