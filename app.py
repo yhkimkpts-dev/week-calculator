@@ -2,8 +2,10 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 from streamlit_option_menu import option_menu
+import json # 1. JSON 모듈 추가
 
 DATE_FMT = "%Y-%m-%d"
+DATA_FILE = "flocks_data.json" # 2. 데이터 파일명 정의
 
 # ----------------- 1. 계산 로직 함수 -----------------
 
@@ -30,9 +32,29 @@ def format_date_with_weekday(d):
 
 # ----------------- 2. Streamlit UI 및 관리 로직 -----------------
 
+# [NEW] 데이터 저장 및 불러오기 함수
+def load_data():
+    """데이터를 파일에서 불러옵니다. (앱 시작 시 호출)"""
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_data(flocks_data):
+    """데이터를 파일에 저장합니다. (데이터 변경 시 호출)"""
+    try:
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            json.dump(flocks_data, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        # Streamlit Cloud에서는 쓰기 권한이나 환경 문제로 실패할 수 있습니다.
+        pass
+
+
 # 세션 상태 초기화 (Streamlit에서 데이터 저장 용도)
 if 'flocks' not in st.session_state:
-    st.session_state.flocks = {} # Format: {'계군 이름': 'YYYY-MM-DD string'}
+    st.session_state.flocks = load_data() # 3. 앱 시작 시 데이터 불러오기
+
 
 # 계군 추가 콜백
 def add_flock_callback(name, hatch_date):
@@ -42,27 +64,29 @@ def add_flock_callback(name, hatch_date):
     
     # datetime 객체를 문자열로 저장
     st.session_state.flocks[name] = hatch_date.strftime(DATE_FMT)
+    save_data(st.session_state.flocks) # 4. 추가 후 데이터 저장
     st.success(f"✅ 계군 '{name}' (입추일: {hatch_date.strftime(DATE_FMT)})이(가) 등록/업데이트되었습니다.")
 
 # 계군 삭제 콜백
 def delete_flock_callback(name_to_delete):
     if name_to_delete in st.session_state.flocks:
         del st.session_state.flocks[name_to_delete]
+        save_data(st.session_state.flocks) # 5. 삭제 후 데이터 저장
         st.success(f"🗑️ 계군 '{name_to_delete}'이(가) 삭제되었습니다.")
 
 # --- 메인 앱 설정 ---
 st.set_page_config(
-    page_title="🐔 한국양계 주령 계산기 (다계군)",
+    page_title="[회사 이름] 주령 계산기 (다계군)",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 col1, col2 = st.columns([1, 5]) # 로고와 제목을 위한 컬럼 분할
 with col1:
-    # 로고 이미지 삽입 (경로와 파일명을 본인것으로 수정해주세요)
-    st.image("kpts.jpg", width=70) # GitHub 루트에 올렸다면 "kpts.jpg"
-                                            # images 폴더에 넣었다면 "images/kpts.jpg"
+    # 이 부분은 사용자님이 설정한 파일명으로 그대로 두세요.
+    st.image("kpts.jpg", width=70) 
 with col2:
     st.title("한국양계 다계군 주령 계산기")
+
 
 today = datetime.now().date()
 current_flocks = st.session_state.flocks
@@ -204,4 +228,3 @@ else:
             st.markdown("#### 📊 계산 결과 테이블")
             df = pd.DataFrame(results_list)
             st.dataframe(df, hide_index=True, use_container_width=True)
-                
