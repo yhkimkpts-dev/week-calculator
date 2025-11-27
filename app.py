@@ -90,7 +90,7 @@ sorted_flock_names = sorted(current_flocks.keys())
 # 사이드바: 계군 관리
 # ====================
 with st.sidebar:
-    st.header("🐑 계군 관리 (입추일 등록)")
+    st.header(" 계군 관리 (입추일 등록)")
     
     # 폼: 계군 등록/수정
     with st.form("flock_add_form"):
